@@ -64,7 +64,61 @@ def ph_ISRate(df, num_col, denom_col, ref_num_col, ref_denom_col, group_cols = N
     (1) Breslow NE, Day NE. Statistical methods in cancer research, volume II: The design and analysis
         of cohort studies. Lyon: International Agency for Research on Cancer, World Health Organisation; 1987.
     (2) Armitage P, Berry G. Statistical methods in medical research (4th edn). Oxford: Blackwell; 2002.
+    
+    Examples
+    --------
+    from PHStatsMethods import ph_ISRate
+    import pandas as pd
+    import numpy as np
 
+    df = pd.DataFrame({
+        'indicatorid': np.repeat([1234, 5678, 91011, 121314], 19 * 2 * 5),
+        'year': np.tile(np.repeat(np.arange(2006, 2011), 19 * 2), 4),
+        'sex': np.tile(np.repeat(['Male', 'Female'], 19), 5 * 4),
+        'ageband': np.tile(np.arange(0, 95, 5), 10 * 4),
+        'obs': np.random.randint(0, 200, 19 * 2 * 5 * 4),
+        'pop': np.random.randint(10000, 20000, 19 * 2 * 5 * 4)
+    })
+
+    # Create the reference dataframe refdf
+    refdf = pd.DataFrame({
+        'refcount': np.random.randint(0, 200, 19),
+        'refpop': np.random.randint(10000, 20000, 19),
+        'ageband': np.arange(0, 95, 5)
+    })
+
+    # Group by 'indicatorid', 'year', 'sex' and calculate ISRs
+    result = df.groupby(['indicatorid', 'year', 'sex']).apply(
+        lambda x: ph_ISRate(
+            x, 'obs', 'pop', 'refcount', 'refpop', 
+            ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband'
+        )
+    )
+    print(result)
+
+    # Group by 'indicatorid', 'year', 'sex' and calculate ISRs without metadata fields
+    result2 = df.groupby(['indicatorid', 'year', 'sex']).apply(
+        lambda x: ph_ISRate(
+            x, 'obs', 'pop', 'refcount', 'refpop', 
+            ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband',
+            metadata=False, confidence=0.998
+        )
+    )
+
+    print(result2)
+
+    # Group by 'indicatorid', 'year', 'sex' and calculate ISRs with multiple confidence intervals
+    result3 = df.groupby(['indicatorid', 'year', 'sex']).apply(
+        lambda x: ph_ISRate(
+            x, 'obs', 'pop', 'refcount', 'refpop', 
+            ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband',
+            confidence=[0.95, 0.998]
+        )
+    )
+    
+    print(result3)
+    
+    
     """
     
     confidence, group_cols = format_args(confidence, group_cols)
