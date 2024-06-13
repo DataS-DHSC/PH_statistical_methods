@@ -87,36 +87,47 @@ def ph_ISRate(df, num_col, denom_col, ref_num_col, ref_denom_col, group_cols = N
         'ageband': np.arange(0, 95, 5)
     })
 
-    # Group by 'indicatorid', 'year', 'sex' and calculate ISRs
-    result = df.groupby(['indicatorid', 'year', 'sex']).apply(
-        lambda x: ph_ISRate(
-            x, 'obs', 'pop', 'refcount', 'refpop', 
-            ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband'
-        )
+   # Group by 'indicatorid', 'year', 'sex' and calculate ISRs
+    result = ph_ISRate(
+        df, 'obs', 'pop', 'refcount', 'refpop', 
+        group_cols=['indicatorid', 'year', 'sex'],
+        ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband'
     )
-    print(result)
 
     # Group by 'indicatorid', 'year', 'sex' and calculate ISRs without metadata fields
-    result2 = df.groupby(['indicatorid', 'year', 'sex']).apply(
-        lambda x: ph_ISRate(
-            x, 'obs', 'pop', 'refcount', 'refpop', 
-            ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband',
-            metadata=False, confidence=0.998
-        )
+    result_no_metadata = ph_ISRate(
+        df, 'obs', 'pop', 'refcount', 'refpop', 
+        group_cols=['indicatorid', 'year', 'sex'],
+        ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband',
+       metadata=False, confidence=0.998
     )
 
-    print(result2)
 
     # Group by 'indicatorid', 'year', 'sex' and calculate ISRs with multiple confidence intervals
-    result3 = df.groupby(['indicatorid', 'year', 'sex']).apply(
-        lambda x: ph_ISRate(
-            x, 'obs', 'pop', 'refcount', 'refpop', 
-            ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband',
-            confidence=[0.95, 0.998]
-        )
+    result_multiple_cis = ph_ISRate(
+        df, 'obs', 'pop', 'refcount', 'refpop', 
+        group_cols=['indicatorid', 'year', 'sex'],
+        ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband',
+        confidence=[0.95, 0.998]
     )
     
-    print(result3)
+    # Define the observed totals dataframe
+    observed_totals = pd.DataFrame({
+        'indicatorid': np.repeat([1234, 5678, 91011, 121314], 10),
+        'year': np.tile(np.repeat(np.arange(2006, 2011), 2), 4),
+        'sex': np.tile(np.repeat(['Male', 'Female'], 5), 4),
+        'observed': np.random.randint(1500, 2500, 40)
+    })
+    
+    # Merge observed totals with the main dataframe
+    df_totals = df.drop(columns='obs').merge(observed_totals, on=['indicatorid', 'year', 'sex'])
+    
+    # Calculate ISRs with observed totals
+    result_with_totals = ph_ISRate(
+        df_totals, 'observed', 'pop', 'refcount', 'refpop', 
+        group_cols=['indicatorid', 'year', 'sex'],
+        ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband'
+    )
     
     
     """

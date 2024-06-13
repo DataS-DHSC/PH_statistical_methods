@@ -68,8 +68,68 @@ def ph_ISRatio(df, num_col, denom_col, ref_num_col, ref_denom_col, group_cols = 
     (1) Breslow NE, Day NE. Statistical methods in cancer research, volume II: The design and analysis 
         of cohort studies. Lyon: International Agency for Research on Cancer, World Health Organisation; 1987.
     (2) Armitage P, Berry G. Statistical methods in medical research (4th edn). Oxford: Blackwell; 2002.
-    """
+    
+    
+    Examples
+    --------
+    
+    import pandas as pd
+    import numpy as np
+    from PHStatsMethods import ph_ISRatio
 
+    # Sample data
+    df = pd.DataFrame({
+        'indicatorid': np.repeat([1234, 5678, 91011, 121314], 19 * 2 * 5),
+        'year': np.tile(np.repeat(np.arange(2006, 2011), 19 * 2), 4),
+        'sex': np.tile(np.repeat(['Male', 'Female'], 19), 5 * 4),
+        'ageband': np.tile(np.arange(0, 95, 5), 10 * 4),
+        'obs': np.random.randint(0, 200, 19 * 2 * 5 * 4),
+        'pop': np.random.randint(10000, 20000, 19 * 2 * 5 * 4)
+    })
+
+    # Create the reference dataframe refdf
+    refdf = pd.DataFrame({
+        'refcount': np.random.randint(0, 200, 19),
+        'refpop': np.random.randint(10000, 20000, 19),
+        'ageband': np.arange(0, 95, 5)
+    })
+
+
+    result = ph_ISRatio(
+            df, 'obs', 'pop', 'refcount', 'refpop', 
+            group_cols=['indicatorid', 'year', 'sex'],
+            metadata=True, confidence=0.95, refvalue=1,
+            ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband'
+        )
+
+
+
+    # Calculate ISRs with 99.8% confidence interval and refvalue=100
+    result_with_confidence = ph_ISRatio(
+        df, 'obs', 'pop', 'refcount', 'refpop', 
+        group_cols=['indicatorid', 'year', 'sex'],
+        confidence=0.998, refvalue=100,
+        ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband'
+    )
+
+
+    # Define the observed totals dataframe
+    observed_totals = pd.DataFrame({
+        'indicatorid': np.repeat([1234, 5678, 91011, 121314], 10),
+        'year': np.tile(np.repeat(np.arange(2006, 2011), 2), 4),
+        'sex': np.tile(np.repeat(['Male', 'Female'], 5), 4),
+        'obs': np.random.randint(1500, 2500, 40)
+    })
+
+    result4 = ph_ISRatio(
+            df, 'obs', 'pop', 'refcount', 'refpop', 
+            group_cols=['indicatorid', 'year', 'sex'],
+            metadata=True, confidence=0.95, refvalue=1,
+            ref_df=refdf, ref_join_left='ageband', ref_join_right='ageband',
+            obs_df=observed_totals, obs_join_left=['indicatorid', 'year', 'sex'], obs_join_right=['indicatorid', 'year', 'sex']
+        )
+
+    """
     # validate data - TODO: check group by row lengths?
     confidence, group_cols = format_args(confidence, group_cols)
     ref_df, ref_join_left, ref_join_right = check_kwargs(df, kwargs, 'ref', ref_num_col, ref_denom_col)
